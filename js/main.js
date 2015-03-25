@@ -9,9 +9,6 @@
 //Categories that will be pulled from the ifixit api.
 var categories;
 
-//Testing to make sure the tile class extending an element actually works :( Mootools makes me sad sometimes.
-var myTile = new Tile();
-
 /*
 	Request 20 items, this will just be to test adding tiles to the page..
 	TODO: Add category hierarchy, so the user doesn't have to go through a list of things.
