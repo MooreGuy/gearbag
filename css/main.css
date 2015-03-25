@@ -5,3 +5,10 @@ h1
 {
 	color: orange;
 }
+
+.tile
+{
+	width: 45%;
+	float: left;
+	border: 1px solid black;
+}
