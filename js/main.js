@@ -20,7 +20,11 @@ var getAllCategories = new Request.JSON({
 		//Iterate through the categories and 
 		for( var x = 0; x < categories.length; x++ )
 		{
-			createCategory(categories[x]);
+			//Create a new category and store the div.
+			var categoryDiv = createCategory(categories[x]);
+			
+			//Get the image for the category and insert it into the previously created category.
+			getCategoryImage( categories[x], categoryDiv )
 		}
 		/*
 			TODO: Figure out how ids should be stored before uncommenting this.
@@ -36,19 +40,23 @@ var getAllCategories = new Request.JSON({
 });
 
 //TODO: Correct how the id is selected once you figure out what it should be.
-//Get an image for the specific category argument.
-var getCategoryImage = function( category ) {
+/*
+	Get an image for the specific category argument.
+	
+	@param category String the name of the category
+*/
+var getCategoryImage = function( category, div ) {
 	var imageRequest = new Request.JSON({
 		url: 'https://www.ifixit.com/api/2.0/categories/' + category,
 		onSuccess: function( responseJSON, responseText ) {
 			var image = new Element( 'img', {
 				src: responseJSON['image']['thumbnail'],
 				alt: category,
-				id: category + 'image'
+				class: 'categoryImage'
 			});
-			console.log($(category));
+
 			//Insert the new image element at the top of the div for the current category.
-			//image.inject( $(category), 'top'); 
+			image.inject( div, 'top'); 
 		},
 		onError: function( error ) {
 			console.log('Failed to get the image for ' + category );
@@ -56,7 +64,11 @@ var getCategoryImage = function( category ) {
 	}).get();
 }
 	
-//Create a new category and insesrt it into the mainBody.
+/*
+	Create a new category and insesrt it into the mainBody.
+	
+	@return div object for the category.
+*/
 var createCategory = function( category ) {
 	//Create a new div for the category
 	var categoryDiv = new Element('div', {
@@ -74,6 +86,8 @@ var createCategory = function( category ) {
 	categoryDiv.inject(mainBody);
 	//nest the title in its div.
 	categoryTitle.inject( categoryDiv );
+
+	return categoryDiv;
 }		 
 
 //Test the request to see if it works.
