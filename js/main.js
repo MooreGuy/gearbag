@@ -60,13 +60,20 @@ var getCategoryImage = function( category ) {
 var createCategory = function( category ) {
 	//Create a new div for the category
 	var categoryDiv = new Element('div', {
-		class: 'categoryDiv',
+		class: 'category tile',
 		id: category, //TODO: Fix what the id should be set to, since it can't contain spaces.
+	});
+
+	//This is the text describing what the tile is.
+	var categoryTitle = new Element('p', {
+		class: 'categoryTitle',
 		html: category
 	});
 	
 	//Insert the newly created category into the main body.
 	categoryDiv.inject(mainBody);
+	//nest the title in its div.
+	categoryTitle.inject( categoryDiv );
 }		 
 
 //Test the request to see if it works.

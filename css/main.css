@@ -1,9 +1,10 @@
-/*
-	Testing to make sure css is linked properly
+/* 
+	Guy Moore
 */
+
 h1
 {
-	color: #0071ce;
+	color: #0071ce; //Light Blue
 	font-family: helvetica;
 	padding: 1em;
 	text-align: center;
@@ -15,9 +16,10 @@ h1
 	float: left;
 	border: 1px solid black;
 	margin: 0.25em;
+	text-align: center;
 }
 
 #header
 {
-	background-color: #555;
+	background-color: #555; //Grey
 |
