@@ -90,6 +90,112 @@ var createCategory = function( category ) {
 	return categoryDiv;
 }		 
 
+function callback( transaction, result ) {
+	console.log( result.rows.item(0) );
+}
+
+
+var gearBagDatabase = function() {
+	/*
+	HTML5 WebSQL is deprecated :{( and this code didn't open the database.
+	var db = new MooSQL({
+		dbName: 'gearbag',
+		dbVersion:'1.0',
+		dbDesc:'Contains info for gearbag.',
+		//Estimate size???
+		dbSize: 20*100
+	})
+	db.addEvent('databaseReady', function() {
+		//This isn't running.
+		console.log('Database is ready.');
+		db.exec("select * from 'items'", callback.bindWithEvent());
+	})
+	db.addEvent('statementError', function( exception ) {
+		console.log( exception );
+	})
+	db.addEvent('notSupported', function() {
+		alert('You can\'t save your items because your browser doesn\'t support local storage.');
+	})
+	db.addEvent('databaseCreated', function() {
+		console.log('The database was just created.');
+	})
+	*/
+	
+
+	addItemToGearBag();
+	
+	console.log('Ran database function.');
+	
+}
+
+function addItemToGearBag( items ) {
+
+	//MDN says not to do this, prefixed names are buggy.
+	//var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+
+	var db;
+	var DBOpenRequest = window.indexedDB.open("gearBag", 1);
+	DBOpenRequest.onsuccess = function( event ) {
+		db = DBOpenRequest.result;
+		var transaction = db.transaction(["items"], "readwrite");
+		transaction.onerror = function( event ) {
+			console.log( 'error on transaction', event );
+		}
+		transaction.oncomplete = function( event ) {
+			console.log( 'completed transaction', event );
+		}
+		
+		var objectStore = transaction.objectStore("items");
+		for( var i in items ) {
+			var request = objectStore.add(items[i]);
+			request.onsuccess = function( event ) {
+				console.log( 'Added an item.', items[i] );
+			}
+			request.onerror = function( event ) {
+				console.log( 'There was an error adding an item.', items[i] );
+			}
+		}
+	}
+	DBOpenRequest.onerror = function( event ) {
+		console.log('There was an error opening the database', event.target.errorCode);
+	}
+
+	//Handle what needs to happen if the database isn't created or is an older version.
+	DBOpenRequest.onupgradeneeded = upgradeDatabase;
+}
+
+/*
+	Handle upgrading the database.
+*/
+var upgradeDatabase = function( event ) {
+
+	console.log('upgrading the database');
+
+	//Handle upgrading the db or creating it..
+	var db = event.target.result;
+
+	//Adding the object store named Items with a key called name.
+	var objectStore = db.createObjectStore("items", { keyPath: "name" });
+
+	//Adding an index.
+	//objectStore.createIndex("number", "number", { unique: false });
+	
+	/*
+	objectStore.transaction.oncomplete = function( event ) {
+		var itemObjectStore = db.transaction("items", "readwrite").objectStore("items");
+		for( var i in customerData ) {
+			itemObjectStore.add( 
+		}
+	}
+	*/			
+}
+
+function getAllGearBagItems() {
+}
+
+function deleteGearBagItem() {
+}
+
 //Test the request to see if it works.
 getAllCategories.get({});	
-
+addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
