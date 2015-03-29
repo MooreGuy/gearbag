@@ -50,7 +50,7 @@ var getCategoryImage = function( category, div ) {
 		url: 'https://www.ifixit.com/api/2.0/categories/' + category,
 		onSuccess: function( responseJSON, responseText ) {
 			var image = new Element( 'img', {
-				src: responseJSON['image']['thumbnail'],
+				src: responseJSON['image']['medium'],
 				alt: category,
 				class: 'categoryImage'
 			});

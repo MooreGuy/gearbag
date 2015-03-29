@@ -2,6 +2,13 @@
 	Guy Moore
 */
 
+body
+{
+	max-width: 768px;
+	margin: 0 auto;
+	position: relative;
+}
+
 h1
 {
 	color: #0071ce; //Light Blue
@@ -12,14 +19,37 @@ h1
 
 .tile
 {
-	width: 45%;
+	width: 40%;
 	float: left;
 	border: 1px solid black;
-	margin: 0.25em;
+	margin: 2.5%;
 	text-align: center;
 }
 
 #header
 {
-	background-color: #555; //Grey
-|
+	background-color: #000; //Grey
+}
+
+#sidebar
+{
+	position: fixed;
+	width: 10%;
+	text-align: center;
+	right: 0px;
+	bottom: 0px;
+	top: 0px;
+}
+
+.sideBarImage
+{
+}
+.sideBarElement
+{
+}
+
+.itemControls
+{
+	margin: 4em 1em 4em 1em;
+	width: 50%;
+}
