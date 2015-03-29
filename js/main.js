@@ -94,44 +94,10 @@ function callback( transaction, result ) {
 	console.log( result.rows.item(0) );
 }
 
-
-var gearBagDatabase = function() {
-	/*
-	HTML5 WebSQL is deprecated :{( and this code didn't open the database.
-	var db = new MooSQL({
-		dbName: 'gearbag',
-		dbVersion:'1.0',
-		dbDesc:'Contains info for gearbag.',
-		//Estimate size???
-		dbSize: 20*100
-	})
-	db.addEvent('databaseReady', function() {
-		//This isn't running.
-		console.log('Database is ready.');
-		db.exec("select * from 'items'", callback.bindWithEvent());
-	})
-	db.addEvent('statementError', function( exception ) {
-		console.log( exception );
-	})
-	db.addEvent('notSupported', function() {
-		alert('You can\'t save your items because your browser doesn\'t support local storage.');
-	})
-	db.addEvent('databaseCreated', function() {
-		console.log('The database was just created.');
-	})
-	*/
-	
-
-	addItemToGearBag();
-	
-	console.log('Ran database function.');
-	
-}
-
 function addItemToGearBag( items ) {
 
-	//MDN says not to do this, prefixed names are buggy.
-	//var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+	//MDN says not to do this, prefixed names are buggy. Possible that these don't use standards.
+	//var indexedDB = window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
 
 	var db;
 	var DBOpenRequest = window.indexedDB.open("gearBag", 1);
@@ -157,7 +123,7 @@ function addItemToGearBag( items ) {
 		}
 	}
 	DBOpenRequest.onerror = function( event ) {
-		console.log('There was an error opening the database', event.target.errorCode);
+		console.log('There was an error opening the gear bag', event.target.errorCode);
 	}
 
 	//Handle what needs to happen if the database isn't created or is an older version.
@@ -165,7 +131,9 @@ function addItemToGearBag( items ) {
 }
 
 /*
-	Handle upgrading the database.
+	Handle upgrading, or instantiating the datbase.
+
+	@paramater the event from the onupgradeneeded event.
 */
 var upgradeDatabase = function( event ) {
 
@@ -177,25 +145,94 @@ var upgradeDatabase = function( event ) {
 	//Adding the object store named Items with a key called name.
 	var objectStore = db.createObjectStore("items", { keyPath: "name" });
 
-	//Adding an index.
+	//Adding an index for the quantity of items.
 	//objectStore.createIndex("number", "number", { unique: false });
+}
+
+/*
+	Retrieve all of the gear bag items.
 	
-	/*
-	objectStore.transaction.oncomplete = function( event ) {
-		var itemObjectStore = db.transaction("items", "readwrite").objectStore("items");
-		for( var i in customerData ) {
-			itemObjectStore.add( 
+	@parameter callback function first paramter error, second parameter
+*/
+function getAllGearBagItems( callback ) {	
+
+	//The database is set after a successful open request is ran.
+	var db;
+
+	//Create the request to open the gear bag.
+	var DBOpenRequest = window.indexedDB.open("gearBag", 1);
+	DBOpenRequest.onsuccess = function( event ) {
+		db = DBOpenRequest.result;
+		var transaction = db.transaction(["items"], "readwrite");
+		transaction.onerror = function( event ) {
+			console.log( 'error on transaction', event.target.errorCode );
+			callback( event.result );
+		}
+		transaction.oncomplete = function( event ) {
+			console.log( 'completed transaction', event );
+		}
+		
+		var objectStore = transaction.objectStore("items");
+			
+		//Array of all the items.
+		var items = [];
+		objectStore.openCursor().onsuccess = function( event ) {
+			var cursor = event.target.result;
+			if( cursor ) {
+				items.push(cursor.value);
+				cursor.continue();
+			}
+			else
+			{
+				callback( Null, items );
+				console.log(items, 'here is everything in the database.');
+			}
 		}
 	}
-	*/			
+	//Set how the database should be upgraded or instantiated.
+	DBOpenRequest.onupgradeneeded = upgradeDatabase;		
 }
 
-function getAllGearBagItems() {
-}
+/*
+	Delete all items listen in the items array argument.
+*/
+var deleteGearBagItems = function( items ) {
+	//The database is set after a successful open request is ran.
+	var db;
 
-function deleteGearBagItem() {
+	var DBOpenRequest = window.indexedDB.open("gearBag", 1);
+	DBOpenRequest.onsuccess = function( event ) {
+		db = DBOpenRequest.result
+		var transaction = db.transaction(["items"], "readwrite");
+		transaction.onerror = function( event ) {
+			console.log( 'error on transaction', event.target.errorCode );
+		}
+		transaction.oncomplete = function( event ) {
+			console.log( 'completed transaction', event );
+		}
+		
+		var objectStore = transaction.objectStore("items");
+
+		for( var i in items )
+		{
+			var request = objectStore.delete(items[i]);
+			request.onsuccess = function() {
+				console.log('Removed an item from the gear bag.', items[i] );
+			}
+			request.onerror = function() {
+				console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
+			}
+		}	
+	}
+	DBOpenRequest.onerror = function( event ) {
+		console.log( 'error opening the gear bag', event.target.errorCode );
+	}
+	DBOpenRequest.oncomplete = function( event ) {
+		console.log( 'completed ', event );
+	}
 }
 
 //Test the request to see if it works.
 getAllCategories.get({});	
-addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
+//addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
+//deleteGearBagItems( ["1965-1969 Chevrolet Corvair"] );
