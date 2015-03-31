@@ -139,7 +139,7 @@ function handleDragEnd( event ) {
 	event.preventDefault();
 }
 
-function addItemToGearBag( items ) {
+function addItemsToGearBag( items ) {
 
 	//MDN says not to do this, prefixed names are buggy. Possible that these don't use standards.
 	//var indexedDB = window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
@@ -180,7 +180,7 @@ function addItemToGearBag( items ) {
 
 	@paramater the event from the onupgradeneeded event.
 */
-var upgradeDatabase = function( event ) {
+function upgradeDatabase( event ) {
 
 	console.log('upgrading the database');
 
@@ -247,27 +247,28 @@ var deleteGearBagItems = function( items ) {
 
 	var DBOpenRequest = window.indexedDB.open("gearBag", 1);
 	DBOpenRequest.onsuccess = function( event ) {
-		db = DBOpenRequest.result
+		db = DBOpenRequest.result;
 		var transaction = db.transaction(["items"], "readwrite");
 		transaction.onerror = function( event ) {
 			console.log( 'error on transaction', event.target.errorCode );
 		}
 		transaction.oncomplete = function( event ) {
 			console.log( 'completed transaction', event );
+			var objectStore = transaction.objectStore("items");
+
+			for( var i in items )
+			{
+				var request = objectStore.delete(items[i]);
+				request.onsuccess = function() {
+					console.log('Removed an item from the gear bag.', items[i] );
+				}
+				request.onerror = function() {
+					console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
+				}
+			}	
 		}
 		
-		var objectStore = transaction.objectStore("items");
 
-		for( var i in items )
-		{
-			var request = objectStore.delete(items[i]);
-			request.onsuccess = function() {
-				console.log('Removed an item from the gear bag.', items[i] );
-			}
-			request.onerror = function() {
-				console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
-			}
-		}	
 	}
 	DBOpenRequest.onerror = function( event ) {
 		console.log( 'error opening the gear bag', event.target.errorCode );
@@ -275,6 +276,64 @@ var deleteGearBagItems = function( items ) {
 	DBOpenRequest.oncomplete = function( event ) {
 		console.log( 'completed ', event );
 	}
+}
+
+/* 
+
+	@param an array of items that should be checked whether or not they are in the database.
+	
+	@param callback has one parameter either true or false. True if the item was found, and false if it wasn't.
+	The callback function should count how many times it is given the result true, if it returns for every single
+	item passed, then everything thing is there, but if it returns false, then something is not there.
+
+*/
+function checkGearBagItems( items, callback ) {	
+	//The database is set after a successful open request is ran.
+	var db;
+
+	var DBOpenRequest = window.indexedDB.open("gearBag", 1);
+	DBOpenRequest.onsuccess = function( event ) {
+		console.log('maybe in here.');
+		db = DBOpenRequest.result;
+		
+		var transaction = db.transaction(["items"], "readwrite");	
+		var objectStore = transaction.objectStore("items");
+		
+		for( var i = 0; i < items.length; i++ ) {
+			console.log( 'checking', items[i] );
+			
+			var request = objectStore.get( items[i] );
+
+			request.onsuccess = function( event ) {
+				if( typeof request.result !== "undefined" && typeof request.result.name !== "undefined" )
+				{
+					callback(true);
+				}
+				else
+				{
+					//not sure if this stops the function this function is nested in.
+					return callback(false);
+				}
+			}
+			request.onerror = function( event ) {
+				console.log( 'couldn\'t check for an item', event.target.errorCode );
+			}
+		}
+		transaction.oncomplete = function( event ) { 
+			console.log('completed transaction', event );
+		}
+		transaction.onerror = function( event ) {
+			console.log('Failed to start transaction with items.', event );
+		}
+
+
+	}
+
+	DBOpenRequest.onerror = function( event ) {
+		console.log( 'error opening the gear bag', event.target.errorCode );
+	}
+
+	DBOpenRequest.onupgradeneeded = upgradeDatabase;
 }
 
 /*
@@ -291,23 +350,40 @@ var setDropArea = function() {
 
 		Do not use Mootools to add events because they are not working for some reason..
 	*/
-	dropArea.addEventListener('drop', handleDrop, false);
+	dropArea.addEventListener('drop', handleGearBagDrop, false);
 	dropArea.addEventListener('dragenter', handleDragEnter, false);
 	dropArea.addEventListener('dragover', handleDragOver, false);
 	dropArea.addEventListener('dragleave', handleDragLeave, false);
 
 }
 
-function handleDrop( event ) {
+function handleGearBagDrop( event ) {
 
 	//Get the data from the drop event.
 	var data = event.dataTransfer.getData("text/plain");
+
+	var handleDropCallback = function( inGearBag ) {
+		console.log( 'Is it in the gearbag?', inGearBag );
+		if( inGearBag ) {
+			console.log( 'The item is already in the gear bag.');
+			//TODO: Add message to tell the user that the item they dropped is already in the gearbag.
+		}
+		else {
+			var itemObject = { name: data };
+			addItemsToGearBag( [itemObject] );
+		}
+	}
+	checkGearBagItems( [data], handleDropCallback );
+	
+	console.log( 'Checking for :', data );
 
 	//TODO: Check if the dropped item is already in the database.
 	//TODO: If the item is not in the database then add it.
 	//Prevent the browser from handling the drop in case it decides to do something browsery.
 	event.preventDefault();
 }
+
+	
 
 function handleDragEnter( event ) {
 	console.log('handleDragEnter');
