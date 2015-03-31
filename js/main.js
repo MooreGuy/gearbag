@@ -49,10 +49,22 @@ var getCategoryImage = function( category, div ) {
 	var imageRequest = new Request.JSON({
 		url: 'https://www.ifixit.com/api/2.0/categories/' + category,
 		onSuccess: function( responseJSON, responseText ) {
+
+			//Check to make sure that there is an image, if not set placeholder.
+			var imageSource;
+			if( responseJSON['image'] !== null && responseJSON['image']['medium'] !== null ) {
+				imageSource = responseJSON['image']['medium'];
+			}
+			else {
+				//TODO: Add placeholder image for items that don't have an image.
+				imageSource = "img/cross.svg"; 
+			}
+				
 			var image = new Element( 'img', {
-				src: responseJSON['image']['medium'],
+				src: imageSource,
 				alt: category,
-				class: 'categoryImage'
+				class: 'categoryImage',
+				draggable: 'false' //Don't allow just the image to be dragged.
 			});
 
 			//Insert the new image element at the top of the div for the current category.
@@ -70,13 +82,45 @@ var getCategoryImage = function( category, div ) {
 	@return div object for the category.
 */
 var createCategory = function( category ) {
+
+	//
+	var onDragStart = 'event.dataTransfer.setData(\'text/plain\', \'' + category + '\')';
+
 	//Create a new div for the category
 	var categoryDiv = new Element('div', {
 		class: 'category tile',
 		id: category, //TODO: Fix what the id should be set to, since it can't contain spaces.
+		draggable: 'true'
+		//ondragstart: onDragStart
 	});
 
-	//This is the text describing what the tile is.
+	//This doesn't work? I don't know why this doesn't work. TODO: Ask iFixit why this doesn't work.
+	//If I had to guess, it is because it doesn't see any valid drop targets.
+	//NOPE the other method will work without valid drop targets, so this should too.
+	/*
+	//The events that happen when dragging starts.
+	categoryDiv.addEvent('dragstart', function( event ) {
+		console.log('started drag event.');
+		event.dataTransfer.setData('text/plain', category);
+		event.dataTransfer.effectAllowed = "copy";
+		//Set the drag image for the cursor.
+		//event.dataTransfer.setDragImage( image, xOffset, yOffset);
+	})
+	*/
+
+	//Do everything vanilla because mootools doesn't work for this. Why do you make me sad Mootools :(
+	categoryDiv.addEventListener('dragstart', handleDragStart, false);
+	categoryDiv.addEventListener('dragend', handleDragEnd, false);
+
+	//Nest the drag start event handler so we can set the category as the transfer data for the drag,
+	//otherwise we would not be able to pass data when dragging.
+	function handleDragStart( event ) {
+		//Set the data type so this will work in firefox.
+		event.dataTransfer.setData('text/plain', category)
+	}
+
+
+	//This is the text describing what the tile is, it is the lower title of the tile.
 	var categoryTitle = new Element('p', {
 		class: 'categoryTitle',
 		html: category
@@ -90,8 +134,9 @@ var createCategory = function( category ) {
 	return categoryDiv;
 }		 
 
-function callback( transaction, result ) {
-	console.log( result.rows.item(0) );
+function handleDragEnd( event ) {
+	//Prevent the default action.
+	event.preventDefault();
 }
 
 function addItemToGearBag( items ) {
@@ -232,7 +277,83 @@ var deleteGearBagItems = function( items ) {
 	}
 }
 
-//Test the request to see if it works.
+/*
+	Clear the default of doing absolutely nothing on drops for the droppables to declare
+	the dropArea class element as an allowed drop area. Add special hilighting classes
+	to the drop area when a drop enters the drop area.
+*/
+var setDropArea = function() {
+	var dropArea = $$('div.dropArea')[0];
+	
+	/*
+		You must prevent the default behavior on both dragenter and dragover
+		according to the MDN guide on drag and drop.
+
+		Do not use Mootools to add events because they are not working for some reason..
+	*/
+	dropArea.addEventListener('drop', handleDrop, false);
+	dropArea.addEventListener('dragenter', handleDragEnter, false);
+	dropArea.addEventListener('dragover', handleDragOver, false);
+	dropArea.addEventListener('dragleave', handleDragLeave, false);
+
+}
+
+function handleDrop( event ) {
+
+	//Get the data from the drop event.
+	var data = event.dataTransfer.getData("text/plain");
+
+	//TODO: Check if the dropped item is already in the database.
+	//TODO: If the item is not in the database then add it.
+	//Prevent the browser from handling the drop in case it decides to do something browsery.
+	event.preventDefault();
+}
+
+function handleDragEnter( event ) {
+	console.log('handleDragEnter');
+	event.preventDefault();
+	//TODO: Highlight the droppable or something schnazzy.
+}
+
+/*
+	Iterate through the list provided to see if it contains at least one type that is equal to the value.
+*/
+function contains( list, value ) {
+	
+	for( var i = 0; i < list.length; i++ )
+	{
+		if( list[i] === value )
+		{
+			return true;
+		}
+	}
+
+	return false
+}
+
+function handleDragOver( event ) {
+
+	//The default is to not do anything, but if the drag contains plain text, then allow the drop.
+	var isPlainText = contains( event.dataTransfer.types, "text/plain" )
+
+	if( isPlainText )
+	{
+		console.log('DOING THE THING YOU SAID');
+		event.preventDefault();
+	}
+}
+
+/*
+	Drag leave will be called even on the drag being cancelled so you can be	
+	sure that it can do cleanup.
+*/
+function handleDragLeave( event ) {
+	//TODO: Remove hilighting and schnazz.
+	console.log('handleDragLeave');
+}
+
+
+setDropArea();
 getAllCategories.get({});	
 //addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
 //deleteGearBagItems( ["1965-1969 Chevrolet Corvair"] );

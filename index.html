@@ -4,8 +4,6 @@
 	<head>
 		<title>Gear Bag</title>
 		<link href="css/reset.css" rel="stylesheet" >
-		<!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"> TODO: Decide whether or not to use bootstrap -->
-		<!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script> -->
 		<link href="css/main.css" rel="stylesheet" >
 	</head>
 
@@ -33,10 +31,10 @@
 			<!-- for item tiles that the user drags to it. -->
 			<div class="container" id="sidebar">
 				<div class="itemControls">
-					<div id="gearBag" class="sideBarElement">
+					<div id="gearBag" class="dropArea sideBarElement">
 						<img src="img/bag.svg" alt="Gear Bag" class="sideBarImage" />	
 					</div> <!-- /gearBag -->
-					<div class="removeButton sideBarElement">
+					<div class="sideBarElement">
 						<img src="img/cross.svg" alt="Gear Bag" class="sideBarImage" />	
 					</div>
 				</div> <!-- /sideBarElements
@@ -46,8 +44,7 @@
 
 
 	</body>
-	<script src="js/mootools/MooTools-More-1.5.1-compressed.js"></script>
-	<!-- This is deprecated. <script src="js/mootools/moosql.js"></script> -->
+	<script src="js/mootools/MooTools-Core-1.5.1.js"></script>
 	<script src="js/main.js"></script>
 
 </html>
