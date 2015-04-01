@@ -434,11 +434,29 @@ function handleDragLeave( event ) {
 */
 function handleHashChange() {
 
+	//This is the changed uri after the hash.
 	uri = location.hash;
-	var regex = /[^\/[^#]/g;
+
+	//The regular expression to ignore the hash and all backslashes.
+	var regex = /[^\/^#]+/g;
+
+	//Temporarily store matches.
 	var matched = null;
-	while (matched = regex.exec(uri)) {
-	  console.log(matched[0]);
+
+	//Array of matches.
+	var uriTokens = [];
+	while( matched = regex.exec(uri) ) {
+		uriTokens.push(matched[0]);
+	}
+
+	
+	console.log( uriTokens[0] );
+	console.log( uriTokens[1] );
+	if( uriTokens[0] === "gearbag" ) {
+		
+		if( uriTokens[1] === "all" ) {
+			getAllCategories.get({});	
+		}
 	}
 }
 
@@ -447,6 +465,5 @@ window.onhashchange = handleHashChange;
 
 
 setDropArea();
-getAllCategories.get({});	
-addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
+//addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
 //deleteGearBagItems( ["1965-1969 Chevrolet Corvair"] );
