@@ -158,6 +158,7 @@ function addItemsToGearBag( items ) {
 		
 		var objectStore = transaction.objectStore("items");
 		for( var i in items ) {
+			console.log(items[i]);
 			var request = objectStore.add(items[i]);
 			request.onsuccess = function( event ) {
 				console.log( 'Added an item.', items[i] );
@@ -428,8 +429,24 @@ function handleDragLeave( event ) {
 	console.log('handleDragLeave');
 }
 
+/*
+	Handle routing of pages.
+*/
+function handleHashChange() {
+
+	uri = location.hash;
+	var regex = /[^\/[^#]/g;
+	var matched = null;
+	while (matched = regex.exec(uri)) {
+	  console.log(matched[0]);
+	}
+}
+
+window.onhashchange = handleHashChange;
+
+
 
 setDropArea();
 getAllCategories.get({});	
-//addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
+addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
 //deleteGearBagItems( ["1965-1969 Chevrolet Corvair"] );
