@@ -1,13 +1,13 @@
 /*
 	Guy Moore 3/2015 - Ifixit ninja test.
 
-	TODO: Figure out how to store id's for tiles.
 	TODO: Add pagination.
 	TODO: Show placeholder before an image has loaded.
 */
 
 //Categories that will be pulled from the ifixit api.
 var categories;
+
 
 /*
 	Request 20 items, this will just be to test adding tiles to the page..
@@ -16,30 +16,53 @@ var categories;
 var getAllCategories = new Request.JSON({
 	url: 'https://www.ifixit.com/api/2.0/categories/all',
 	onSuccess: function( responseJSON, responseText ) {
-		categories = responseJSON;
-		//Iterate through the categories and 
-		for( var x = 0; x < categories.length; x++ )
-		{
-			//Create a new category and store the div.
-			var categoryDiv = createCategory(categories[x]);
-			
-			//Get the image for the category and insert it into the previously created category.
-			getCategoryImage( categories[x], categoryDiv )
-		}
-		/*
-			TODO: Figure out how ids should be stored before uncommenting this.
-			for( var x = 0; x < categories.length; x++ )
-			{
-				getCategoryImage(categories[x]);
-			}
-		*/
+		//Add the categories to the page as tiles. 
+		loadTiles( responseJSON );
 	},
 	onError: function( text, error ) {	
 		alert('There was a problem getting the categories.');
 	}
 });
 
-//TODO: Correct how the id is selected once you figure out what it should be.
+
+/*
+	Takes in an array of names and creates a tile for each then injects it into
+	the mainBody.
+	
+	@param categories an array of names for categories or items.
+*/	
+function loadTiles( categories ) {
+	for( var x = 0; x < categories.length; x++ ) {
+
+		//Create a new category and store the div.
+		var categoryDiv = createCategory(categories[x]);
+	
+		//Get the image for the category and insert it into the previously created category.
+		getCategoryImage( categories[x], categoryDiv )
+	}
+}
+
+
+/*
+	Create the callback which is like a node.js callback, where first it takes an error if 
+	there is any, then an array of items names.
+
+	If there is no error from getAllGearBagItems, then load the tiles into the mainBody.
+*/
+function loadGearBagItems() {
+	var callback = function( error, itemNames ) {
+		if( error ) {
+			console.log('There was an error getting the items.');
+		}
+		else {
+			loadTiles( itemNames );
+		}
+	}	
+
+	getAllGearBagItems( callback );
+}
+
+
 /*
 	Get an image for the specific category argument.
 	
@@ -75,6 +98,7 @@ var getCategoryImage = function( category, div ) {
 		}
 	}).get();
 }
+
 	
 /*
 	Create a new category and insesrt it into the mainBody.
@@ -89,7 +113,6 @@ var createCategory = function( category ) {
 	//Create a new div for the category
 	var categoryDiv = new Element('div', {
 		class: 'category tile',
-		id: category, //TODO: Fix what the id should be set to, since it can't contain spaces.
 		draggable: 'true'
 		//ondragstart: onDragStart
 	});
@@ -134,11 +157,16 @@ var createCategory = function( category ) {
 	return categoryDiv;
 }		 
 
+
 function handleDragEnd( event ) {
 	//Prevent the default action.
 	event.preventDefault();
 }
 
+
+/*
+	Add an array of items to the gear bag.
+*/
 function addItemsToGearBag( items ) {
 
 	//MDN says not to do this, prefixed names are buggy. Possible that these don't use standards.
@@ -176,6 +204,7 @@ function addItemsToGearBag( items ) {
 	DBOpenRequest.onupgradeneeded = upgradeDatabase;
 }
 
+
 /*
 	Handle upgrading, or instantiating the datbase.
 
@@ -195,10 +224,12 @@ function upgradeDatabase( event ) {
 	//objectStore.createIndex("number", "number", { unique: false });
 }
 
+
 /*
 	Retrieve all of the gear bag items.
 	
-	@parameter callback function first paramter error, second parameter
+	@parameter callback function like node.js, first paramter will be an error if any was thrown,
+	and the second parameter is an array of items if there were no errors.
 */
 function getAllGearBagItems( callback ) {	
 
@@ -225,12 +256,13 @@ function getAllGearBagItems( callback ) {
 		objectStore.openCursor().onsuccess = function( event ) {
 			var cursor = event.target.result;
 			if( cursor ) {
-				items.push(cursor.value);
+				//Get the name of the stored object.
+				items.push(cursor.value['name']);
 				cursor.continue();
 			}
 			else
 			{
-				callback( Null, items );
+				callback( null, items );
 				console.log(items, 'here is everything in the database.');
 			}
 		}
@@ -239,8 +271,9 @@ function getAllGearBagItems( callback ) {
 	DBOpenRequest.onupgradeneeded = upgradeDatabase;		
 }
 
+
 /*
-	Delete all items listen in the items array argument.
+	Delete all items listed in the items array argument.
 */
 var deleteGearBagItems = function( items ) {
 	//The database is set after a successful open request is ran.
@@ -278,6 +311,7 @@ var deleteGearBagItems = function( items ) {
 		console.log( 'completed ', event );
 	}
 }
+
 
 /* 
 
@@ -337,12 +371,16 @@ function checkGearBagItems( items, callback ) {
 	DBOpenRequest.onupgradeneeded = upgradeDatabase;
 }
 
+
 /*
 	Clear the default of doing absolutely nothing on drops for the droppables to declare
 	the dropArea class element as an allowed drop area. Add special hilighting classes
 	to the drop area when a drop enters the drop area.
+
+	@param dropFunction a function handling what should happen when an item is dropped on the
+	drop area.
 */
-var setDropArea = function() {
+var setDropArea = function( dropFunction ) {
 	var dropArea = $$('div.dropArea')[0];
 	
 	/*
@@ -351,14 +389,29 @@ var setDropArea = function() {
 
 		Do not use Mootools to add events because they are not working for some reason..
 	*/
-	dropArea.addEventListener('drop', handleGearBagDrop, false);
+	dropArea.addEventListener('drop', dropFunction, false);
 	dropArea.addEventListener('dragenter', handleDragEnter, false);
 	dropArea.addEventListener('dragover', handleDragOver, false);
 	dropArea.addEventListener('dragleave', handleDragLeave, false);
 
+	console.log('setting drop area.', dropArea, dropFunction );
 }
 
-function handleGearBagDrop( event ) {
+
+function handleDeleteDrop( event ) {
+	
+	var data = event.dataTransfer.getData("text/plain");
+	
+	deleteGearBagItems( [data] );
+
+	event.preventDefault();
+}
+
+
+/*
+	Handle what should happen when the user drops an item on the gear bag.
+*/
+var handleGearBagDrop = function( event ) {
 
 	//Get the data from the drop event.
 	var data = event.dataTransfer.getData("text/plain");
@@ -385,12 +438,29 @@ function handleGearBagDrop( event ) {
 }
 
 	
-
+/*
+	Decide what should be done when the cursor scrolls over a drop area while dragging
+	an item.
+*/
 function handleDragEnter( event ) {
-	console.log('handleDragEnter');
 	event.preventDefault();
 	//TODO: Highlight the droppable or something schnazzy.
+	//TODO: Only highlight when there is something that should be dropped.
 }
+
+
+/*
+	Drag leave will be called even on the drag being cancelled so you can be	
+	sure that it can do cleanup.
+*/
+function handleDragLeave( event ) {
+
+	//TODO: Remove hilighting and schnazz.
+	//Always remove hilighting, and don't check if it is a valid drop target, because even if it
+	//wasn't then it should still be removed.
+	console.log('handleDragLeave');
+}
+
 
 /*
 	Iterate through the list provided to see if it contains at least one type that is equal to the value.
@@ -408,6 +478,10 @@ function contains( list, value ) {
 	return false
 }
 
+
+/*
+	Handle what happens when the user drags an item over a drop area.
+*/
 function handleDragOver( event ) {
 
 	//The default is to not do anything, but if the drag contains plain text, then allow the drop.
@@ -415,22 +489,16 @@ function handleDragOver( event ) {
 
 	if( isPlainText )
 	{
-		console.log('DOING THE THING YOU SAID');
+		//Prevent the default only if they are dragging something that has data that is plain
+		//text. Otherwise they might drag random elements into the gear bag.
 		event.preventDefault();
 	}
 }
 
-/*
-	Drag leave will be called even on the drag being cancelled so you can be	
-	sure that it can do cleanup.
-*/
-function handleDragLeave( event ) {
-	//TODO: Remove hilighting and schnazz.
-	console.log('handleDragLeave');
-}
 
 /*
-	Handle routing of pages.
+	Handle routing of pages get the items after the hash and use a regular expression
+	to filter out the hash and split up the uri in to chunks divided by backslashes.
 */
 function handleHashChange() {
 
@@ -449,21 +517,124 @@ function handleHashChange() {
 		uriTokens.push(matched[0]);
 	}
 
-	
-	console.log( uriTokens[0] );
-	console.log( uriTokens[1] );
-	if( uriTokens[0] === "gearbag" ) {
+	/*
+		Simple routing, the application is really small, only 2 pages and one that has two
+		different options for displaying its items. So this works just fine.
+	*/
+	if( uriTokens[0] === "items" ) {
 		
 		if( uriTokens[1] === "all" ) {
+			clearTiles();
+			clearItemControls();
+			createGearBagControl();
 			getAllCategories.get({});	
+			setDropArea(handleGearBagDrop);
+			console.log('This should not be undefined', handleGearBagDrop);
 		}
+		if( uriTokens[1] === "categories" ) {
+			clearTiles();
+			clearItemControls();
+			createGearBagControl();
+			//getCategories()  TODO: Load categories in a hierarchical manner.
+			setDropArea(handleGearBagDrop);
+		}
+	}
+	else if( uriTokens[0] === "gearbag" ) {
+		console.log('This feature is still a work in progress.');
+		//TODO: Create the delete div and image.
+		//TODO: get all items from the gearbag.
+		//TODO: set the drop area and tell the delete div how to handle drops.
+
+		clearTiles();
+		clearItemControls();
+		createDeleteButton();
+		loadGearBagItems();
+		setDropArea(handleDeleteDrop);
+
+	}
+
+	//If there is nothing recognized. Default to items.
+	else {	
+		clearTiles();
+		clearItemControls();
+		createGearBagControl();
+		getAllCategories.get({});	
+		setDropArea(handleGearBagDrop);
 	}
 }
 
-window.onhashchange = handleHashChange;
+
+/*
+	Destroy all of the tiles that are in the main body.
+*/
+function clearTiles() {
+	var tiles = $('mainBody').getChildren();
+	
+	for( var x = 0; x < tiles.length; x++ ) {
+		tiles[x].destroy();
+	}	
+}
+
+
+/*
+	Destroy all the control buttons and dorp areas in the itemControls bar.
+*/
+function clearItemControls() {
+	var controls = $('itemControls').getChildren();
+
+	for( var x = 0; x < controls.length; x++ ) {
+		controls[x].destroy();
+	}
+}
+
+
+/*
+	Create the elements for the gearbag.
+
+	Creates the gear bag div element inject it into the sidebar. Next, add
+	the gear bag image and inject it into the gear bag div.
+*/
+function createGearBagControl() {
+	var gearBag = new Element( 'div', {
+		class: 'dropArea sideBarElement'
+	})
+
+	gearBag.inject( itemControls );
+
+	var gearBagImage = new Element( 'img', {
+		src: 'img/bag.svg',
+		alt: 'Gear Bag',
+		class: 'sideBarImage dropArea'
+	})
+
+	gearBagImage.inject( gearBag );
+}
+
+
+/*
+	Create the elements for the delete button.
+*/
+function createDeleteButton() {
+	var deleteButton = new Element( 'div', {
+		class: 'dropArea sideBarElement'
+	})
+	
+	deleteButton.inject( itemControls );
+
+	var deleteImage = new Element( 'img', {
+		src: 'img/cross.svg',
+		alt: 'Delete Button',
+		class: 'sideBarImage'
+	})
+
+	deleteImage.inject( deleteButton );
+}
 
 
 
-setDropArea();
+
+window.addEventListener( 'hashchange', handleHashChange )
+window.addEventListener( 'load', handleHashChange )
+
 //addItemToGearBag( [{name: "1965-1969 Chevrolet Corvair"}] );
 //deleteGearBagItems( ["1965-1969 Chevrolet Corvair"] );
