@@ -123,7 +123,6 @@ var createCategory = function( category ) {
 	/*
 	//The events that happen when dragging starts.
 	categoryDiv.addEvent('dragstart', function( event ) {
-		console.log('started drag event.');
 		event.dataTransfer.setData('text/plain', category);
 		event.dataTransfer.effectAllowed = "copy";
 		//Set the drag image for the cursor.
@@ -140,6 +139,21 @@ var createCategory = function( category ) {
 	function handleDragStart( event ) {
 		//Set the data type so this will work in firefox.
 		event.dataTransfer.setData('text/plain', category)
+		categoryDiv.addClass('dragging');
+		categoryDiv.fade('out');
+	}
+
+	function handleDragEnd( event ) {
+		//Prevent the default action.
+		event.preventDefault();
+			
+		console.log( event.dataTransfer.getData('text/plain'));
+		
+		/*
+		if( event.dataTransfer.getData('text/plain') !== null ) {
+			categoryDiv.fade('in');
+		}
+		*/
 	}
 
 
@@ -156,12 +170,6 @@ var createCategory = function( category ) {
 
 	return categoryDiv;
 }		 
-
-
-function handleDragEnd( event ) {
-	//Prevent the default action.
-	event.preventDefault();
-}
 
 
 /*
@@ -283,25 +291,27 @@ var deleteGearBagItems = function( items ) {
 	DBOpenRequest.onsuccess = function( event ) {
 		db = DBOpenRequest.result;
 		var transaction = db.transaction(["items"], "readwrite");
+
 		transaction.onerror = function( event ) {
 			console.log( 'error on transaction', event.target.errorCode );
 		}
 		transaction.oncomplete = function( event ) {
 			console.log( 'completed transaction', event );
-			var objectStore = transaction.objectStore("items");
-
-			for( var i in items )
-			{
-				var request = objectStore.delete(items[i]);
-				request.onsuccess = function() {
-					console.log('Removed an item from the gear bag.', items[i] );
-				}
-				request.onerror = function() {
-					console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
-				}
-			}	
 		}
 		
+
+		var objectStore = transaction.objectStore("items");
+
+		for( var i in items )
+		{
+			var request = objectStore.delete(items[i]);
+			request.onsuccess = function() {
+				console.log('Removed an item from the gear bag.', items[i] );
+			}
+			request.onerror = function() {
+				console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
+			}
+		}	
 
 	}
 	DBOpenRequest.onerror = function( event ) {
@@ -328,14 +338,12 @@ function checkGearBagItems( items, callback ) {
 
 	var DBOpenRequest = window.indexedDB.open("gearBag", 1);
 	DBOpenRequest.onsuccess = function( event ) {
-		console.log('maybe in here.');
 		db = DBOpenRequest.result;
 		
 		var transaction = db.transaction(["items"], "readwrite");	
 		var objectStore = transaction.objectStore("items");
 		
 		for( var i = 0; i < items.length; i++ ) {
-			console.log( 'checking', items[i] );
 			
 			var request = objectStore.get( items[i] );
 
@@ -355,7 +363,6 @@ function checkGearBagItems( items, callback ) {
 			}
 		}
 		transaction.oncomplete = function( event ) { 
-			console.log('completed transaction', event );
 		}
 		transaction.onerror = function( event ) {
 			console.log('Failed to start transaction with items.', event );
@@ -415,21 +422,27 @@ var handleGearBagDrop = function( event ) {
 
 	//Get the data from the drop event.
 	var data = event.dataTransfer.getData("text/plain");
+	var draggingElement = $$('div.dragging')[0];
 
 	var handleDropCallback = function( inGearBag ) {
-		console.log( 'Is it in the gearbag?', inGearBag );
 		if( inGearBag ) {
-			console.log( 'The item is already in the gear bag.');
 			//TODO: Add message to tell the user that the item they dropped is already in the gearbag.
+
+			//fade the element back in since it was faded it out and we need it again.
+			draggingElement.removeClass('dragging');
+			draggingElement.fade('in');
+			console.log(draggingElement);
 		}
 		else {
 			var itemObject = { name: data };
 			addItemsToGearBag( [itemObject] );
+			draggingElement.dispose();
+			
+
 		}
 	}
 	checkGearBagItems( [data], handleDropCallback );
 	
-	console.log( 'Checking for :', data );
 
 	//TODO: Check if the dropped item is already in the database.
 	//TODO: If the item is not in the database then add it.
@@ -458,7 +471,6 @@ function handleDragLeave( event ) {
 	//TODO: Remove hilighting and schnazz.
 	//Always remove hilighting, and don't check if it is a valid drop target, because even if it
 	//wasn't then it should still be removed.
-	console.log('handleDragLeave');
 }
 
 
@@ -529,7 +541,6 @@ function handleHashChange() {
 			createGearBagControl();
 			getAllCategories.get({});	
 			setDropArea(handleGearBagDrop);
-			console.log('This should not be undefined', handleGearBagDrop);
 		}
 		if( uriTokens[1] === "categories" ) {
 			clearTiles();
@@ -540,7 +551,6 @@ function handleHashChange() {
 		}
 	}
 	else if( uriTokens[0] === "gearbag" ) {
-		console.log('This feature is still a work in progress.');
 		//TODO: Create the delete div and image.
 		//TODO: get all items from the gearbag.
 		//TODO: set the drop area and tell the delete div how to handle drops.
