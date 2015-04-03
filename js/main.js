@@ -17,7 +17,9 @@ var getAllCategories = new Request.JSON({
 	url: 'https://www.ifixit.com/api/2.0/categories/all',
 	onSuccess: function( responseJSON, responseText ) {
 		//Add the categories to the page as tiles. 
-		loadTiles( responseJSON );
+		for( var x = 0; x < responseJSON.length; x++ ) {
+			loadItemTile( responseJSON[x] );
+		}
 	},
 	onError: function( text, error ) {	
 		alert('There was a problem getting the categories.');
@@ -26,17 +28,45 @@ var getAllCategories = new Request.JSON({
 
 
 /*
-	Takes in an array of names and creates a tile for each then injects it into
-	the mainBody.
+	Checks if this item is already in the gearbag before adding it. If it is it
+	takes in a name and creates a tile for it. Then injects it into the mainBody.
+	Next the image is retrieved.
 	
-	@param categories an array of names for categories or items.
+	@param categories string name of the category.
+*/	
+function loadItemTile( category ) {
+		
+	var callback = function( error, inGearBag ) {
+		if( error ) {
+			console.log('There was an error checking the gearbag.');
+		}
+		else if( !inGearBag ) {
+			//Create a new category and store the div.
+			var categoryDiv = createCategory(category);
+
+			//Get the image for the category and insert it into the previously created category.
+			getCategoryImage( category, categoryDiv );
+		}	
+	}
+
+	//Check the gearbag, if successful it will run the callback function.
+	checkGearBagItems( category, callback );
+}
+
+
+/*
+	Takes in a name and creates a tile for it. Then injects it into
+	the mainBody. Next the image is retrieved.
+	
+	@param categories string name of the category.
 */	
 function loadTiles( categories ) {
-	for( var x = 0; x < categories.length; x++ ) {
 
+	for( var x = 0; x < categories.length; x++ )
+	{
 		//Create a new category and store the div.
 		var categoryDiv = createCategory(categories[x]);
-	
+
 		//Get the image for the category and insert it into the previously created category.
 		getCategoryImage( categories[x], categoryDiv )
 	}
@@ -143,19 +173,6 @@ var createCategory = function( category ) {
 		categoryDiv.fade('out');
 	}
 
-	function handleDragEnd( event ) {
-		//Prevent the default action.
-		event.preventDefault();
-			
-		console.log( event.dataTransfer.getData('text/plain'));
-		
-		/*
-		if( event.dataTransfer.getData('text/plain') !== null ) {
-			categoryDiv.fade('in');
-		}
-		*/
-	}
-
 
 	//This is the text describing what the tile is, it is the lower title of the tile.
 	var categoryTitle = new Element('p', {
@@ -170,6 +187,17 @@ var createCategory = function( category ) {
 
 	return categoryDiv;
 }		 
+
+function handleDragEnd( event ) {
+	//Prevent the default action.
+	event.preventDefault();
+		
+	//fade the element back in since it was faded it out and we need it again.
+	var draggingElement = $$('div.dragging')[0];
+	draggingElement.removeClass('dragging');
+	draggingElement.fade('in');
+
+}
 
 
 /*
@@ -328,11 +356,9 @@ var deleteGearBagItems = function( items ) {
 	@param an array of items that should be checked whether or not they are in the database.
 	
 	@param callback has one parameter either true or false. True if the item was found, and false if it wasn't.
-	The callback function should count how many times it is given the result true, if it returns for every single
-	item passed, then everything thing is there, but if it returns false, then something is not there.
 
 */
-function checkGearBagItems( items, callback ) {	
+function checkGearBagItems( item, callback ) {	
 	//The database is set after a successful open request is ran.
 	var db;
 
@@ -343,31 +369,28 @@ function checkGearBagItems( items, callback ) {
 		var transaction = db.transaction(["items"], "readwrite");	
 		var objectStore = transaction.objectStore("items");
 		
-		for( var i = 0; i < items.length; i++ ) {
-			
-			var request = objectStore.get( items[i] );
+		var request = objectStore.get( item );
 
-			request.onsuccess = function( event ) {
-				if( typeof request.result !== "undefined" && typeof request.result.name !== "undefined" )
-				{
-					callback(true);
-				}
-				else
-				{
-					//not sure if this stops the function this function is nested in.
-					return callback(false);
-				}
+		request.onsuccess = function( event ) {
+			if( typeof request.result !== "undefined" && typeof request.result.name !== "undefined" )
+			{
+				callback(true);
 			}
-			request.onerror = function( event ) {
-				console.log( 'couldn\'t check for an item', event.target.errorCode );
+			else
+			{
+				//not sure if this stops the function this function is nested in.
+				return callback(false);
 			}
 		}
+		request.onerror = function( event ) {
+			console.log( 'couldn\'t check for an item', event.target.errorCode );
+		}
+
 		transaction.oncomplete = function( event ) { 
 		}
 		transaction.onerror = function( event ) {
 			console.log('Failed to start transaction with items.', event );
 		}
-
 
 	}
 
@@ -400,16 +423,25 @@ var setDropArea = function( dropFunction ) {
 	dropArea.addEventListener('dragenter', handleDragEnter, false);
 	dropArea.addEventListener('dragover', handleDragOver, false);
 	dropArea.addEventListener('dragleave', handleDragLeave, false);
-
-	console.log('setting drop area.', dropArea, dropFunction );
 }
 
 
+/*
+	Handle what should happen when the user drops and item on the delete
+	cross
+
+	First get the data from the drop event, then delete it from the database.
+	Then we have to prevent the default action from occurring on drops.
+*/
 function handleDeleteDrop( event ) {
 	
 	var data = event.dataTransfer.getData("text/plain");
 	
 	deleteGearBagItems( [data] );
+
+	//Remove the element that was being dragged.
+	var draggingElement = $$('div.dragging')[0];
+	draggingElement.dispose();
 
 	event.preventDefault();
 }
@@ -428,9 +460,6 @@ var handleGearBagDrop = function( event ) {
 		if( inGearBag ) {
 			//TODO: Add message to tell the user that the item they dropped is already in the gearbag.
 
-			//fade the element back in since it was faded it out and we need it again.
-			draggingElement.removeClass('dragging');
-			draggingElement.fade('in');
 			console.log(draggingElement);
 		}
 		else {
