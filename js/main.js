@@ -81,6 +81,8 @@ function loadItemTile( category ) {
 			//Create a new category and store the div.
 			var categoryDiv = createCategory(category);
 
+			createPlaceHolder( categoryDiv );
+
 			//Get the image for the category and insert it into the previously created category.
 			getCategoryImage( category, categoryDiv );
 		}	
@@ -88,6 +90,34 @@ function loadItemTile( category ) {
 
 	//Check the gearbag, if successful it will run the callback function.
 	checkGearBagItems( category, callback );
+}
+
+
+/*
+	Create a placeholder image that is loaded before the actual image is.
+*/
+function createPlaceHolder( categoryDiv ) {
+
+	var image = new Element( 'img', {
+		src: 'img/item.svg',
+		alt: 'Item',
+		class: 'categoryImage placeHolder',
+		draggable: 'false' //Don't allow just the image to be dragged.
+	});
+
+	image.inject(categoryDiv, 'top');
+
+}
+
+
+/*
+	Dispose of the placeholder image.
+*/
+function removePlaceHolder( categoryDiv  ) {
+	
+	var selector = '.placeHolder';
+	var placeHolderImage = categoryDiv.getChildren( selector );
+	placeHolderImage.dispose();
 }
 
 
@@ -103,6 +133,8 @@ function loadTiles( categories ) {
 	{
 		//Create a new category and store the div.
 		var categoryDiv = createCategory(categories[x]);
+
+		createPlaceHolder( categoryDiv );
 
 		//Get the image for the category and insert it into the previously created category.
 		getCategoryImage( categories[x], categoryDiv )
@@ -142,12 +174,10 @@ var getCategoryImage = function( category, div ) {
 
 			//Check to make sure that there is an image, if not set placeholder.
 			var imageSource;
-			if( responseJSON['image'] !== null && responseJSON['image']['medium'] !== null ) {
+			if( typeof responseJSON['image'] !== "undefined" && typeof responseJSON['image']['medium'] !== "undefined" ) {
+				removePlaceHolder(div);
 				imageSource = responseJSON['image']['medium'];
-			}
-			else {
-				//TODO: Add placeholder image for items that don't have an image.
-				imageSource = "img/cross.svg"; 
+				console.log( category, responseJSON['image']['medium']);
 			}
 				
 			var image = new Element( 'img', {

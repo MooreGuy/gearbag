@@ -26,6 +26,17 @@ h1
 	text-align: center;
 }
 
+#mainBody div:nth-child(2n+1)
+{
+	background: orange;	
+	clear: left;
+}
+
+#mainBody div:hover
+{
+	background: #0071ce; //Light Blue
+}
+
 #header
 {
 	background-color: #000; //Grey
