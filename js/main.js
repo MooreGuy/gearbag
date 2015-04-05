@@ -10,21 +10,58 @@ var categories;
 
 
 /*
-	Request 20 items, this will just be to test adding tiles to the page..
+	Request 20 items, either by an offset that increments by 20 every time the function is called, or 
+	a custom offset can be set by setting the customOffset argument to a number a positive number.
+
+	@param customOffset null if there is no custom offset and a positive number if it is not.
+
 	TODO: Add category hierarchy, so the user doesn't have to go through a list of things.
 */
-var getAllCategories = new Request.JSON({
-	url: 'https://www.ifixit.com/api/2.0/categories/all',
-	onSuccess: function( responseJSON, responseText ) {
-		//Add the categories to the page as tiles. 
-		for( var x = 0; x < responseJSON.length; x++ ) {
-			loadItemTile( responseJSON[x] );
+function GetCategories() {};
+
+
+GetCategories.requestOffset = -20;
+GetCategories.requestLimit = 20;
+
+
+/*
+	TODO: Comment this method.
+*/
+GetCategories.getAll = function( customOffset, callback ) {
+
+	/*
+		TODO: Comment this method.
+	*/
+	GetCategories.requestAll = new Request.JSON( {
+		url: 'https://www.ifixit.com/api/2.0/categories/all',
+		onSuccess: function( responseJSON, responseText ) {
+			//Add the categories to the page as tiles. 
+			for( var x = 0; x < responseJSON.length; x++ ) {
+				loadItemTile( responseJSON[x] );
+			}
+			console.log('done with getting tiles.', callback );
+			if( typeof callback !== "undefined" ) {
+				callback();
+			}
+		},
+		onError: function( text, error ) {	
+			alert('There was a problem getting the categories.');
+			
+			if( callback !== null ) {
+				callback(error);
+			}
 		}
-	},
-	onError: function( text, error ) {	
-		alert('There was a problem getting the categories.');
+	})
+
+	if( typeof customOffset !== null ) {
+		GetCategories.requestOffset += 20;
+		GetCategories.requestAll.get( {"offset": GetCategories.requestOffset, "limit": GetCategories.requestLimit });
 	}
-});
+	else {
+		GetCategories.requestAll.get( {"offset": customOffset, "limit": GetCategories.requestLimit });
+	}
+		
+}
 
 
 /*
@@ -538,6 +575,33 @@ function handleDragOver( event ) {
 
 
 /*
+*/
+function InfiniteScrolling() {};
+InfiniteScrolling.loading = false;;
+
+InfiniteScrolling.onScroll = function() {
+
+	var loadingCallback = function() {
+		InfiniteScrolling.loading = false;
+		console.log('done loading');
+	}
+
+	var scrollSize = $(window).getScrollSize();
+	var scrolled = $(window).getScroll();
+	
+	//console.log( scrolled.y );
+	//console.log( scrollSize.y );
+	if( scrolled.y >= scrollSize.y - 1200 ) {
+		if( InfiniteScrolling.loading === false ) {
+			GetCategories.getAll( null, loadingCallback );
+			InfiniteScrolling.loading = true;
+			console.log('loading');
+		}
+	}
+}
+
+
+/*
 	Handle routing of pages get the items after the hash and use a regular expression
 	to filter out the hash and split up the uri in to chunks divided by backslashes.
 */
@@ -568,8 +632,9 @@ function handleHashChange() {
 			clearTiles();
 			clearItemControls();
 			createGearBagControl();
-			getAllCategories.get({});	
+			GetCategories.getAll();	
 			setDropArea(handleGearBagDrop);
+			window.addEventListener( 'scroll', InfiniteScrolling.onScroll );
 		}
 		if( uriTokens[1] === "categories" ) {
 			clearTiles();
@@ -597,8 +662,9 @@ function handleHashChange() {
 		clearTiles();
 		clearItemControls();
 		createGearBagControl();
-		getAllCategories.get({});	
+		GetCategories.getAll();	
 		setDropArea(handleGearBagDrop);
+		window.addEventListener( 'scroll', InfiniteScrolling.onScroll );
 	}
 }
 
@@ -668,7 +734,6 @@ function createDeleteButton() {
 
 	deleteImage.inject( deleteButton );
 }
-
 
 
 
