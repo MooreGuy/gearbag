@@ -2,44 +2,84 @@
 	Guy Moore
 */
 
+html
+{
+	font-size: 16px;
+}
+
+a
+{
+	text-decoration: none;
+}
+
+hr
+{
+	clear: both;
+	margin: 3em 1em 1em 1em;
+}
+
 body
 {
 	max-width: 768px;
 	margin: 0 auto;
-	position: relative;
 }
+
 
 h1
 {
-	color: #0071ce; //Light Blue
-	font-family: helvetica;
-	padding: 1em;
-	text-align: center;
+	font-weight: 700;
+	font-size: 2rem;
+	float: left;
+}
+
+#header
+{
+	color: #0071ce; /*Light Blue*/
+	padding: .25em;
+	font-family: 'Lato', sans-serif;
+
+	border-top: 7px solid #DDD; /*Grey*/
+}
+
+#header ul
+{
+	float: right;
+}
+
+#header li
+{
+	display: inline-block;
+	margin: 0 1em 0 1em;
 }
 
 .tile
 {
 	width: 40%;
 	float: left;
-	border: 1px solid black;
+
+	border: 1px solid #AAA;
+	border-radius: 5px;
+
+	font-family: 'Roboto', sans-serif;
+	color: #0071ce; /*Light Blue*/
+
+	padding: .25em;
 	margin: 2.5%;
 	text-align: center;
+
 }
 
 #mainBody div:nth-child(2n+1)
 {
-	background: orange;	
 	clear: left;
 }
 
-#mainBody div:hover
+.tile:hover
 {
-	background: #0071ce; //Light Blue
-}
+	background: #0071ce; /*Light Blue*/
+	color: #FFF;
 
-#header
-{
-	background-color: #000; //Grey
+	box-shadow: 1px 3px 5px #AAA;
 }
 
 #sidebar
@@ -54,6 +94,7 @@ h1
 
 .sideBarImage
 {
+
 }
 
 .sideBarElement

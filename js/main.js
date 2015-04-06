@@ -662,7 +662,7 @@ function handleHashChange() {
 			clearTiles();
 			clearItemControls();
 			createGearBagControl();
-			GetCategories.getAll();	
+			GetCategories.getAll( 0 );	
 			setDropArea(handleGearBagDrop);
 			window.addEventListener( 'scroll', InfiniteScrolling.onScroll );
 		}
@@ -684,6 +684,7 @@ function handleHashChange() {
 		createDeleteButton();
 		loadGearBagItems();
 		setDropArea(handleDeleteDrop);
+		window.removeEventListener( 'scroll', InfiniteScrolling.onScroll );
 
 	}
 
@@ -692,7 +693,7 @@ function handleHashChange() {
 		clearTiles();
 		clearItemControls();
 		createGearBagControl();
-		GetCategories.getAll();	
+		GetCategories.getAll( 0 );	
 		setDropArea(handleGearBagDrop);
 		window.addEventListener( 'scroll', InfiniteScrolling.onScroll );
 	}
