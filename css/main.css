@@ -2,14 +2,54 @@
 	Guy Moore
 */
 
+/* Single column layout */
+@media ( max-width: 499px )
+{
+	.tile
+	{
+		width: 90%;
+	}
+}
+
+/* Double Column layout */
+@media ( min-width: 500px ) and ( max-width: 1000px )
+{
+	.tile
+	{
+		width: 40%;		
+		margin: 2.5%;
+	}
+
+	#mainBody div:nth-child(2n+1)
+	{
+		clear: left;
+	}
+}
+
+/* Triple column layout */
+@media ( min-width: 1001px )
+{
+	.tile
+	{
+		width: 22%;
+		margin: 1.555555%
+	}
+
+	#mainBody div:nth-child(3n+1)
+	{
+		clear: left;
+	}
+}
+	
 html
 {
 	font-size: 16px;
 }
 
-a
+a, a:visited
 {
 	text-decoration: none;
+	color: #0071ce; /*Light Blue*/
 }
 
 hr
@@ -20,7 +60,6 @@ hr
 
 body
 {
-	max-width: 768px;
 	margin: 0 auto;
 }
 
@@ -44,6 +83,7 @@ h1
 #header ul
 {
 	float: right;
+	margin-right: 10%;
 }
 
 #header li
@@ -54,24 +94,18 @@ h1
 
 .tile
 {
-	width: 40%;
 	float: left;
 
 	border: 1px solid #AAA;
 	border-radius: 5px;
 
 	font-family: 'Roboto', sans-serif;
+	text-align: center;
 	color: #0071ce; /*Light Blue*/
 
-	padding: .25em;
-	margin: 2.5%;
-	text-align: center;
+	padding: 0.25em;
 
-}
 
-#mainBody div:nth-child(2n+1)
-{
-	clear: left;
 }
 
 .tile:hover
@@ -80,6 +114,11 @@ h1
 	color: #FFF;
 
 	box-shadow: 1px 3px 5px #AAA;
+}
+
+.tile .categoryTitle
+{
+	margin: 1em 0 1em 0;
 }
 
 #sidebar
@@ -99,7 +138,7 @@ h1
 
 .sideBarElement
 {
-	margin: 4em 1em 4em 1em;
+	margin: 7em 1em 4em 1em;
 	width: 50%;
 }
 

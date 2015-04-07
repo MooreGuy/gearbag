@@ -5,8 +5,6 @@
 	TODO: Show placeholder before an image has loaded.
 */
 
-//Categories that will be pulled from the ifixit api.
-var categories;
 
 
 /*
@@ -27,7 +25,7 @@ GetCategories.requestLimit = 20;
 /*
 	TODO: Comment this method.
 */
-GetCategories.getAll = function( customOffset, callback ) {
+GetCategories.all = function( customOffset, callback ) {
 
 	/*
 		TODO: Comment this method.
@@ -39,8 +37,7 @@ GetCategories.getAll = function( customOffset, callback ) {
 			for( var x = 0; x < responseJSON.length; x++ ) {
 				loadItemTile( responseJSON[x] );
 			}
-			console.log('done with getting tiles.', callback );
-			if( typeof callback !== "undefined" ) {
+			if( typeof callback !== "undefined" && typeof callback !== null ) {
 				callback();
 			}
 		},
@@ -59,9 +56,101 @@ GetCategories.getAll = function( customOffset, callback ) {
 	}
 	else {
 		GetCategories.requestAll.get( {"offset": customOffset, "limit": GetCategories.requestLimit });
-	}
-		
+		GetCategories.requestOffset = customOffset;
+	}		
 }
+
+//Categories that will be pulled from the ifixit api.
+GetCategories.hierarchy = null;
+
+/*
+	TODO: Complete this method and comment it.
+
+	@param categoryTokens array of categories in order from the uri tokens.
+*/
+GetCategories.hierarchical = function( categoryTokens ) {
+	console.log('getting hierarchical');
+
+	//TODO: Remove this object that is being binded in produceHierarchyTiles, was just practicing.
+	var Category = {
+		categories: categoryTokens
+	};
+	console.log(Category.categories);
+	
+	//Make sure we've got the hierarchy. If it is null, then request it and then complete the rest of the function.
+	if( GetCategories.hierarchy === null ) {	
+		GetCategories.requestCategories = new Request.JSON( {
+			url: 'https://www.ifixit.com/api/2.0/categories',
+			onSuccess: function( ResponseJSON, text ) {
+				GetCategories.hierarchy = ResponseJSON;
+				console.log(ResponseJSON);
+				console.log(GetCategories.hierarchy);
+				produceHierarchyTiles.bind(Category);
+				produceHierarchyTiles();
+			},
+			onError: function() {
+				console.log( 'There was an error getting the category hierarchy.');
+			}
+		}).get({});
+	}
+	//TODO: Wrap else in its own function so it can be used in the onSuccess callback of the JSON Request.
+	else {
+		produceHierarchyTiles.bind(Category)();
+		
+	}
+
+}
+
+
+/*
+	Obtains the current object by stepping through the trail of uri tokens to the desired object.
+	Then produces a string name for each child category of our currentWorkingCategory. Next, loads
+	the tiles and a the breadcrumb.
+
+	@param array categories the category trail from the uri tokens. 
+*/
+function produceHierarchyTiles() {
+	console.log(this.categories);
+
+	//Get the desired category in the hierarchy and produce its tiles and breadcrumb.
+	var currentWorkingCategory = GetCategories.getCategoryInHierarchy( this.categories );
+		
+
+	//Get a list of string category names instead of objects from the currentWorkingCategory.
+	var categoryNames = [];
+	for( var category in currentWorkingCategory ) {
+		categoryNames.push(category);
+	}
+
+	//TODO: Produce tiles
+	loadTiles( categoryNames )
+	//TODO: Produce breadcrumb.
+}
+
+
+/*
+	Returns the object of the very last category name in categories by stepping,
+	through the hierarchy object.
+	
+	@param string array categories which is the list breadcumbs for the categories.
+	the last category name will be the object returned.
+*/
+GetCategories.getCategoryInHierarchy = function( categories ) {
+
+	var currentCategoryObject = GetCategories.hierarchy;
+
+	//If there are no uri tokens just get the root category.
+	if( typeof categories === "undefined" ) {
+		
+		return currentCategoryObject;
+	}
+	for( var i = 1; i < categories.length; i++ ) {
+		currentCategoryObject = currentCategoryObject[categories[x]];
+	}
+
+}
+
+
 
 
 /*
@@ -174,21 +263,28 @@ var getCategoryImage = function( category, div ) {
 
 			//Check to make sure that there is an image, if not set placeholder.
 			var imageSource;
-			if( typeof responseJSON['image'] !== "undefined" && typeof responseJSON['image']['medium'] !== "undefined" ) {
-				removePlaceHolder(div);
+			try {
 				imageSource = responseJSON['image']['medium'];
-				console.log( category, responseJSON['image']['medium']);
+				if( typeof imageSource !== "undefined" ) {
+
+					removePlaceHolder(div);
+
+					var image = new Element( 'img', {
+						src: imageSource,
+						alt: category,
+						class: 'categoryImage',
+						draggable: 'false' //Don't allow just the image to be dragged.
+					});
+
+					//Insert the new image element at the top of the div for the current
+					//category.
+					image.inject( div, 'top'); 
+				}
+			}
+			catch( error ) { 
+				//console.log('No image for ' + category, error );
 			}
 				
-			var image = new Element( 'img', {
-				src: imageSource,
-				alt: category,
-				class: 'categoryImage',
-				draggable: 'false' //Don't allow just the image to be dragged.
-			});
-
-			//Insert the new image element at the top of the div for the current category.
-			image.inject( div, 'top'); 
 		},
 		onError: function( error ) {
 			console.log('Failed to get the image for ' + category );
@@ -284,15 +380,12 @@ function addItemsToGearBag( items ) {
 			console.log( 'error on transaction', event );
 		}
 		transaction.oncomplete = function( event ) {
-			console.log( 'completed transaction', event );
 		}
 		
 		var objectStore = transaction.objectStore("items");
 		for( var i in items ) {
-			console.log(items[i]);
 			var request = objectStore.add(items[i]);
 			request.onsuccess = function( event ) {
-				console.log( 'Added an item.', items[i] );
 			}
 			request.onerror = function( event ) {
 				console.log( 'There was an error adding an item.', items[i] );
@@ -315,7 +408,6 @@ function addItemsToGearBag( items ) {
 */
 function upgradeDatabase( event ) {
 
-	console.log('upgrading the database');
 
 	//Handle upgrading the db or creating it..
 	var db = event.target.result;
@@ -349,7 +441,6 @@ function getAllGearBagItems( callback ) {
 			callback( event.result );
 		}
 		transaction.oncomplete = function( event ) {
-			console.log( 'completed transaction', event );
 		}
 		
 		var objectStore = transaction.objectStore("items");
@@ -366,7 +457,6 @@ function getAllGearBagItems( callback ) {
 			else
 			{
 				callback( null, items );
-				console.log(items, 'here is everything in the database.');
 			}
 		}
 	}
@@ -391,7 +481,6 @@ var deleteGearBagItems = function( items ) {
 			console.log( 'error on transaction', event.target.errorCode );
 		}
 		transaction.oncomplete = function( event ) {
-			console.log( 'completed transaction', event );
 		}
 		
 
@@ -401,7 +490,6 @@ var deleteGearBagItems = function( items ) {
 		{
 			var request = objectStore.delete(items[i]);
 			request.onsuccess = function() {
-				console.log('Removed an item from the gear bag.', items[i] );
 			}
 			request.onerror = function() {
 				console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
@@ -413,7 +501,6 @@ var deleteGearBagItems = function( items ) {
 		console.log( 'error opening the gear bag', event.target.errorCode );
 	}
 	DBOpenRequest.oncomplete = function( event ) {
-		console.log( 'completed ', event );
 	}
 }
 
@@ -623,9 +710,8 @@ InfiniteScrolling.onScroll = function() {
 	//console.log( scrollSize.y );
 	if( scrolled.y >= scrollSize.y - 1200 ) {
 		if( InfiniteScrolling.loading === false ) {
-			GetCategories.getAll( null, loadingCallback );
+			GetCategories.all( null, loadingCallback );
 			InfiniteScrolling.loading = true;
-			console.log('loading');
 		}
 	}
 }
@@ -662,7 +748,7 @@ function handleHashChange() {
 			clearTiles();
 			clearItemControls();
 			createGearBagControl();
-			GetCategories.getAll( 0 );	
+			GetCategories.all( 0 );	
 			setDropArea(handleGearBagDrop);
 			window.addEventListener( 'scroll', InfiniteScrolling.onScroll );
 		}
@@ -670,8 +756,25 @@ function handleHashChange() {
 			clearTiles();
 			clearItemControls();
 			createGearBagControl();
-			//getCategories()  TODO: Load categories in a hierarchical manner.
 			setDropArea(handleGearBagDrop);
+
+			for( var i = 2; i < uriTokens.length; i++ ) {
+				//TODO: Create breadcrumbs
+			}
+
+			//TODO: Populate categories.
+			//TODO: Load categories in a hierarchical manner. When no parameter is specified then load root category list.
+			if( uriTokens.length === 2 ) {
+				GetCategories.hierarchical(); 
+			}
+			else {
+				//TODO: Get the categories within the category specified in the last uri token.
+
+				//Create an array of the current category hierarchy. Remove the first two elements that are just directing to the hierarchical view.
+				var categoryArray = uriTokens.split(2);
+				GetCategories.hierarchical( categoryArray );
+			}
+			
 		}
 	}
 	else if( uriTokens[0] === "gearbag" ) {
@@ -693,7 +796,7 @@ function handleHashChange() {
 		clearTiles();
 		clearItemControls();
 		createGearBagControl();
-		GetCategories.getAll( 0 );	
+		GetCategories.all( 0 );	
 		setDropArea(handleGearBagDrop);
 		window.addEventListener( 'scroll', InfiniteScrolling.onScroll );
 	}
