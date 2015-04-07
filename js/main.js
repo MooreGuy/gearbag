@@ -163,7 +163,7 @@ GetCategories.getCategoryInHierarchy = function( categories ) {
 function loadItemTile( category ) {
 		
 	var callback = function( error, inGearBag ) {
-		//Check to make sure there were no errors.
+
 		if( error ) {
 			console.log('There was an error checking the gearbag.');
 		}
@@ -391,13 +391,6 @@ function addItemToGearBag( item ) {
 		transaction.oncomplete = function( event ) {
 		}
 		
-		/*
-			the For in loop was removed because it was adding a function to the object
-			that the loop was retrieving from the array. The object would be cloned and placed
-			in the indexedDB but then the function would fail because the engine doesn't know 
-			how to clone a function. and since there should only be one item being	
-			dragged and dropped at a time, adding arrays of items is pointless work.
-		*/
 		var objectStore = transaction.objectStore("items");
 		var request = objectStore.add(item);
 		request.onsuccess = function( event ) {
@@ -502,11 +495,6 @@ var deleteGearBagItem = function( item ) {
 
 		var objectStore = transaction.objectStore("items");
 
-		/*
-			This was the same problem as adding items to the indexedDB. The for in loop was
-			adding a function to the end of the object in some way so when the object was
-			being passed into the delete function, there was a function trying to go in with him
-		*/
 		var request = objectStore.delete(item);
 		request.onsuccess = function() {
 		}
