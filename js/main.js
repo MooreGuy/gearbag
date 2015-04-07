@@ -163,6 +163,7 @@ GetCategories.getCategoryInHierarchy = function( categories ) {
 function loadItemTile( category ) {
 		
 	var callback = function( error, inGearBag ) {
+		//Check to make sure there were no errors.
 		if( error ) {
 			console.log('There was an error checking the gearbag.');
 		}
@@ -357,16 +358,24 @@ function handleDragEnd( event ) {
 		
 	//fade the element back in since it was faded it out and we need it again.
 	var draggingElement = $$('div.dragging')[0];
-	draggingElement.removeClass('dragging');
-	draggingElement.fade('in');
+
+	//Check to make sure the element being dragged wasn't disposed of. Like when added to the
+	//gearbag.
+	if( typeof draggingElement !== "undefined" ) {	
+		draggingElement.removeClass('dragging');
+		draggingElement.fade('in');
+	}
 
 }
 
 
 /*
-	Add an array of items to the gear bag.
+	Add a single item to the gearbag.
+	
+	@param item object is an object with a name property that associates with the name of
+	the item being added.
 */
-function addItemsToGearBag( items ) {
+function addItemToGearBag( item ) {
 
 	//MDN says not to do this, prefixed names are buggy. Possible that these don't use standards.
 	//var indexedDB = window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
@@ -375,21 +384,26 @@ function addItemsToGearBag( items ) {
 	var DBOpenRequest = window.indexedDB.open("gearBag", 1);
 	DBOpenRequest.onsuccess = function( event ) {
 		db = DBOpenRequest.result;
-		var transaction = db.transaction(["items"], "readwrite");
+		var transaction = db.transaction("items", "readwrite");
 		transaction.onerror = function( event ) {
 			console.log( 'error on transaction', event );
 		}
 		transaction.oncomplete = function( event ) {
 		}
 		
+		/*
+			the For in loop was removed because it was adding a function to the object
+			that the loop was retrieving from the array. The object would be cloned and placed
+			in the indexedDB but then the function would fail because the engine doesn't know 
+			how to clone a function. and since there should only be one item being	
+			dragged and dropped at a time, adding arrays of items is pointless work.
+		*/
 		var objectStore = transaction.objectStore("items");
-		for( var i in items ) {
-			var request = objectStore.add(items[i]);
-			request.onsuccess = function( event ) {
-			}
-			request.onerror = function( event ) {
-				console.log( 'There was an error adding an item.', items[i] );
-			}
+		var request = objectStore.add(item);
+		request.onsuccess = function( event ) {
+		}
+		request.onerror = function( event ) {
+			console.log( 'There was an error adding an item.', items[i] );
 		}
 	}
 	DBOpenRequest.onerror = function( event ) {
@@ -466,9 +480,11 @@ function getAllGearBagItems( callback ) {
 
 
 /*
-	Delete all items listed in the items array argument.
+	Delete an item from the gear bag.
+		
+	@param item object with the name property associated with the name of the item being deleted.
 */
-var deleteGearBagItems = function( items ) {
+var deleteGearBagItem = function( item ) {
 	//The database is set after a successful open request is ran.
 	var db;
 
@@ -486,15 +502,17 @@ var deleteGearBagItems = function( items ) {
 
 		var objectStore = transaction.objectStore("items");
 
-		for( var i in items )
-		{
-			var request = objectStore.delete(items[i]);
-			request.onsuccess = function() {
-			}
-			request.onerror = function() {
-				console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
-			}
-		}	
+		/*
+			This was the same problem as adding items to the indexedDB. The for in loop was
+			adding a function to the end of the object in some way so when the object was
+			being passed into the delete function, there was a function trying to go in with him
+		*/
+		var request = objectStore.delete(item);
+		request.onsuccess = function() {
+		}
+		request.onerror = function() {
+			console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
+		}
 
 	}
 	DBOpenRequest.onerror = function( event ) {
@@ -509,7 +527,8 @@ var deleteGearBagItems = function( items ) {
 
 	@param an array of items that should be checked whether or not they are in the database.
 	
-	@param callback has one parameter either true or false. True if the item was found, and false if it wasn't.
+	@param callback has two parameters an error if there was an error, and then a boolean
+	either true or false. True if the item was found, and false if it wasn't.
 
 */
 function checkGearBagItems( item, callback ) {	
@@ -528,22 +547,22 @@ function checkGearBagItems( item, callback ) {
 		request.onsuccess = function( event ) {
 			if( typeof request.result !== "undefined" && typeof request.result.name !== "undefined" )
 			{
-				callback(true);
+				callback(null, true);
 			}
 			else
 			{
 				//not sure if this stops the function this function is nested in.
-				return callback(false);
+				return callback(null, false);
 			}
 		}
 		request.onerror = function( event ) {
-			console.log( 'couldn\'t check for an item', event.target.errorCode );
+			return callback( error );
 		}
 
 		transaction.oncomplete = function( event ) { 
 		}
 		transaction.onerror = function( event ) {
-			console.log('Failed to start transaction with items.', event );
+			return callback( error );
 		}
 
 	}
@@ -591,7 +610,7 @@ function handleDeleteDrop( event ) {
 	
 	var data = event.dataTransfer.getData("text/plain");
 	
-	deleteGearBagItems( [data] );
+	deleteGearBagItem( data );
 
 	//Remove the element that was being dragged.
 	var draggingElement = $$('div.dragging')[0];
@@ -618,7 +637,7 @@ var handleGearBagDrop = function( event ) {
 		}
 		else {
 			var itemObject = { name: data };
-			addItemsToGearBag( [itemObject] );
+			addItemToGearBag( itemObject );
 			draggingElement.dispose();
 			
 
@@ -700,7 +719,6 @@ InfiniteScrolling.onScroll = function() {
 
 	var loadingCallback = function() {
 		InfiniteScrolling.loading = false;
-		console.log('done loading');
 	}
 
 	var scrollSize = $(window).getScrollSize();
