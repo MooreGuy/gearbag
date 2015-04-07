@@ -386,7 +386,7 @@ function addItemToGearBag( item ) {
 		db = DBOpenRequest.result;
 		var transaction = db.transaction("items", "readwrite");
 		transaction.onerror = function( event ) {
-			console.log( 'error on transaction', event );
+			console.log( 'error on transaction', transaction.error );
 		}
 		transaction.oncomplete = function( event ) {
 		}
@@ -444,8 +444,7 @@ function getAllGearBagItems( callback ) {
 		db = DBOpenRequest.result;
 		var transaction = db.transaction(["items"], "readwrite");
 		transaction.onerror = function( event ) {
-			console.log( 'error on transaction', event.target.errorCode );
-			callback( event.result );
+			callback( transaction.error );
 		}
 		transaction.oncomplete = function( event ) {
 		}
@@ -487,7 +486,7 @@ var deleteGearBagItem = function( item ) {
 		var transaction = db.transaction(["items"], "readwrite");
 
 		transaction.onerror = function( event ) {
-			console.log( 'error on transaction', event.target.errorCode );
+			console.log( transaction.error );
 		}
 		transaction.oncomplete = function( event ) {
 		}
@@ -550,7 +549,7 @@ function checkGearBagItems( item, callback ) {
 		transaction.oncomplete = function( event ) { 
 		}
 		transaction.onerror = function( event ) {
-			return callback( error );
+			return callback( transaction.error );
 		}
 
 	}
