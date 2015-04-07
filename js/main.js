@@ -396,11 +396,11 @@ function addItemToGearBag( item ) {
 		request.onsuccess = function( event ) {
 		}
 		request.onerror = function( event ) {
-			console.log( 'There was an error adding an item.', items[i] );
+			console.log( 'There was an error adding an item.', items[i], request.error );
 		}
 	}
 	DBOpenRequest.onerror = function( event ) {
-		console.log('There was an error opening the gear bag', event.target.errorCode);
+		console.log('There was an error opening the gear bag', request.error );
 	}
 
 	//Handle what needs to happen if the database isn't created or is an older version.
@@ -498,12 +498,12 @@ var deleteGearBagItem = function( item ) {
 		request.onsuccess = function() {
 		}
 		request.onerror = function() {
-			console.log( 'Failed to remove an item from the gear bag.', event.target.errorCode );
+			console.log( 'Failed to remove an item from the gear bag.', request.error );
 		}
 
 	}
 	DBOpenRequest.onerror = function( event ) {
-		console.log( 'error opening the gear bag', event.target.errorCode );
+		console.log( 'error opening the gear bag', DBOpenRequest.error );
 	}
 	DBOpenRequest.oncomplete = function( event ) {
 	}
@@ -543,7 +543,7 @@ function checkGearBagItems( item, callback ) {
 			}
 		}
 		request.onerror = function( event ) {
-			return callback( error );
+			return callback( request.error );
 		}
 
 		transaction.oncomplete = function( event ) { 
@@ -555,7 +555,7 @@ function checkGearBagItems( item, callback ) {
 	}
 
 	DBOpenRequest.onerror = function( event ) {
-		console.log( 'error opening the gear bag', event.target.errorCode );
+		console.log( 'error opening the gear bag', DBOpenRequest.error );
 	}
 
 	DBOpenRequest.onupgradeneeded = upgradeDatabase;
