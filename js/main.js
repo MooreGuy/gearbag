@@ -50,7 +50,7 @@ GetCategories.all = function( customOffset, callback ) {
 		}
 	})
 
-	if( typeof customOffset !== null ) {
+	if( customOffset === null ) {
 		GetCategories.requestOffset += 20;
 		GetCategories.requestAll.get( {"offset": GetCategories.requestOffset, "limit": GetCategories.requestLimit });
 	}
