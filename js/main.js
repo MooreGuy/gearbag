@@ -119,11 +119,13 @@ function produceHierarchyTiles() {
 	//Get a list of string category names instead of objects from the currentWorkingCategory.
 	var categoryNames = [];
 	for( var category in currentWorkingCategory ) {
-		categoryNames.push(category);
+		//Loading all cateogries as an item since I ran out of time to differ between items and categories.
+		loadItemTile(category);
+		//categoryNames.push(category);
 	}
 
-	//TODO: Produce tiles
-	loadTiles( categoryNames )
+	//TODO: Produce tiles and differ whether they are a category, or an item with no children.
+	//loadTiles( categoryNames )
 	//TODO: Produce breadcrumb.
 }
 
