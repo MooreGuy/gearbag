@@ -119,11 +119,13 @@ function produceHierarchyTiles() {
 	//Get a list of string category names instead of objects from the currentWorkingCategory.
 	var categoryNames = [];
 	for( var category in currentWorkingCategory ) {
-		categoryNames.push(category);
+		//Loading all cateogries as an item since I ran out of time to differ between items and categories.
+		loadItemTile(category);
+		//categoryNames.push(category);
 	}
 
-	//TODO: Produce tiles
-	loadTiles( categoryNames )
+	//TODO: Produce tiles and differ whether they are a category, or an item with no children.
+	//loadTiles( categoryNames )
 	//TODO: Produce breadcrumb.
 }
 
@@ -750,6 +752,7 @@ function handleHashChange() {
 	if( uriTokens[0] === "items" ) {
 		
 		if( uriTokens[1] === "all" ) {
+			
 			clearTiles();
 			clearItemControls();
 			createGearBagControl();
@@ -763,19 +766,25 @@ function handleHashChange() {
 			createGearBagControl();
 			setDropArea(handleGearBagDrop);
 
+			//Don't allow new tiles to be loaded through infinite scrolling.
+			window.removeEventListener( 'scroll', InfiniteScrolling.onScroll );
+
 			for( var i = 2; i < uriTokens.length; i++ ) {
 				//TODO: Create breadcrumbs
 			}
 
 			//TODO: Populate categories.
-			//TODO: Load categories in a hierarchical manner. When no parameter is specified then load root category list.
+			//TODO: Load categories in a hierarchical manner.
+
+			//When no parameter is specified then load root category list.
 			if( uriTokens.length === 2 ) {
 				GetCategories.hierarchical(); 
 			}
 			else {
 				//TODO: Get the categories within the category specified in the last uri token.
 
-				//Create an array of the current category hierarchy. Remove the first two elements that are just directing to the hierarchical view.
+				//Create an array of the current category hierarchy.
+				//Remove the first two elements that are just directing to the hierarchical view.
 				var categoryArray = uriTokens.split(2);
 				GetCategories.hierarchical( categoryArray );
 			}
@@ -792,6 +801,8 @@ function handleHashChange() {
 		createDeleteButton();
 		loadGearBagItems();
 		setDropArea(handleDeleteDrop);
+
+		//Don't allow new tiles to be loaded through infinite scrolling.
 		window.removeEventListener( 'scroll', InfiniteScrolling.onScroll );
 
 	}
